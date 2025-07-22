@@ -80,8 +80,8 @@ public class MatatuService {
 //    }
 
     //find available matatus
-    public List<Matatu> findAvailableMatatus() {
-        return matatuRepository.findByAvailable(true);
+    public List<Matatu> findAvailableMatatus(String status){
+        return matatuRepository.findByStatus("available");
     }
 
     public Matatu saveMatatu(Optional<Matatu> matatu) {
