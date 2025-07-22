@@ -10,16 +10,18 @@ import lombok.Data;
 public class Matatu {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "reg_no" ,unique = true)
-    private String regNo;
+    @Column(name = "plate_number" ,unique = true)
+    private String plateNumber;
 
     private Integer capacity;
 
     private String model;
 
+    private String status; //available, assigned, enroute, breakdown, delay
+
+    private String route;
+
     boolean available = true; // Default value for availability
+
 
 }
