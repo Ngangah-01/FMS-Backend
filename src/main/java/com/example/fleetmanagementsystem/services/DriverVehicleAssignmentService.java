@@ -41,7 +41,7 @@ public class DriverVehicleAssignmentService {
 
         // Check if driver already has a vehicle
         if (assignmentRepository.findByDriverAndUnassignedAtIsNull(driver).isPresent()) {
-            return new ApiResponse(0, "Driver " + driver.getName() + " already has a vehicle assigned");
+            return new ApiResponse(0, "Driver " + driver.getFirstname() + " already has a vehicle assigned");
         }
 
         // Check if vehicle is already assigned

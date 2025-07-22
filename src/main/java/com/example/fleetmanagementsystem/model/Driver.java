@@ -1,22 +1,31 @@
 package com.example.fleetmanagementsystem.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Collection;
 
-
+@Getter
+@Setter
 @Data
 @Entity
 @Table(name = "drivers")
 public class Driver {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "Driver_ID")
+    private Long driverId;
 
-    @Column
-    private String Name;
+    @NotBlank
+    @Column(nullable = false)
+    private String firstname;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String lastname;
 
     // email should be unique
     @Column(unique = true, nullable = false)
@@ -28,8 +37,8 @@ public class Driver {
     @Column(nullable = false, unique = true)
     private String licenseNumber;
 
-    @OneToOne
-    @JoinColumn(name = "user_id",referencedColumnName = "id", unique = true)
+    @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinColumn(name = "Driver_ID",referencedColumnName = "id_Number", unique = true)
     private Users user; // Assuming Users is a class that represents the user details
 
 

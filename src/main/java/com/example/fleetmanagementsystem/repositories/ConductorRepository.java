@@ -1,6 +1,7 @@
 package com.example.fleetmanagementsystem.repositories;
 
 import com.example.fleetmanagementsystem.model.Conductor;
+import com.example.fleetmanagementsystem.model.Driver;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
