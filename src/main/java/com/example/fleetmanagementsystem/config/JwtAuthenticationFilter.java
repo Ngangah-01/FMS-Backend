@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        if (request.getRequestURI().startsWith("/api/auth/")) {
+        if (request.getRequestURI().startsWith("/api/auth/") || request.getRequestURI().startsWith("/error")) {
             // Skip authentication for authentication endpoints
             filterChain.doFilter(request, response);
             return;

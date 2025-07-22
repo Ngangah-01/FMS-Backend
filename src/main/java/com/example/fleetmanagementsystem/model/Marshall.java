@@ -1,19 +1,30 @@
 package com.example.fleetmanagementsystem.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
+
+@Getter
+@Setter
 @Data
 @Entity
 @Table(name = "marshalls")
 public class Marshall {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "marshall_Id")
+    private Long marshallId;
 
-    @Column
-    private String Name;
+    @NotBlank
+    @Column(nullable = false)
+    private String firstname;
+
+    @NotBlank
+    @Column(nullable = false)
+    private String lastname;
 
     //email should be unique
     @Column(unique = true, nullable = false)
@@ -25,10 +36,21 @@ public class Marshall {
     @Column(nullable = false)
     private String Stage;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", unique = true)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "marshall_Id", referencedColumnName = "id_Number", insertable = false, updatable = false, unique = true)
     private Users user; // Assuming Users is a class that represents the user details
 
+    @Override
+    public String toString() {
+        return "Marshall{" +
+                "marshallId=" + marshallId +
+                ", firstname='" + firstname + '\'' +
+                ", lastname='" + lastname + '\'' +
+                ", Email='" + Email + '\'' +
+                ", PhoneNumber='" + PhoneNumber + '\'' +
+                ", Stage='" + Stage + '\'' +
+                '}';
+    }
     // Additional fields can be added as needed
 
 }

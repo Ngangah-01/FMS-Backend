@@ -5,7 +5,10 @@ import com.example.fleetmanagementsystem.model.Users;
 import com.example.fleetmanagementsystem.repositories.UserRepository;
 import com.example.fleetmanagementsystem.config.JwtUtil;
 import com.example.fleetmanagementsystem.services.EmailService;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -13,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -32,6 +36,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+
     private final JwtUtil jwtUtil;
 
     public AuthController(AuthenticationManager authenticationManager, UserRepository userRepository,
@@ -46,9 +51,10 @@ public class AuthController {
 
     /**
      * Endpoint for admin registration.
-     * Only allows users with ADMIN role to register.
+     * Only allows users with an ADMIN role to register.
      */
 
+    @Transactional
     @PostMapping("/register")
     public ResponseEntity<ApiResponse> register(@Valid @RequestBody RegisterRequest request) {
         // Restrict registration to ADMIN role
@@ -57,18 +63,21 @@ public class AuthController {
                     new ApiResponse(0, "Only admins can register via this endpoint"));
         }
 
-        // Check if username already exists
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        // Check if the id already exists
+        if (userRepository.findByidNumber(request.getIdNumber()).isPresent()) {
             return ResponseEntity.badRequest().body(
-                    new ApiResponse(0, "Username already exists"));
+                    new ApiResponse(0, "User ID Number already exists!"));
         }
 
         // Create and save user 
         Users user = new Users();
-        user.setUsername(request.getUsername());
+        user.setIdNumber(request.getIdNumber());
+        user.setFirstname(request.getFirstName());
+        user.setLastname(request.getLastName());
+        user.setPhoneNumber(request.getPhoneNumber());
+        user.setEmail(request.getEmail());
         String plainPassword = request.getPassword(); // Store plain password for email
         user.setPassword(passwordEncoder.encode(plainPassword));
-        user.setEmail(request.getEmail());
         Set<String> roles = new HashSet<>();
         roles.add(request.getRole().toUpperCase());
         user.setRoles(roles);
@@ -76,16 +85,18 @@ public class AuthController {
 
         // Prepare response data
         Map<String, Object> responseData = new HashMap<>();
-        responseData.put("id", savedUser.getId());
-        responseData.put("username", savedUser.getUsername());
+        responseData.put("idNumber", savedUser.getIdNumber());
+        responseData.put("Firstname", savedUser.getFirstname());
+        responseData.put("Lastname", savedUser.getLastname());
+        responseData.put("PhoneNumber", savedUser.getPhoneNumber());
         responseData.put("Email", savedUser.getEmail());
         responseData.put("role", savedUser.getRoles().iterator().next());
         try {
             emailService.sendAccountCreationEmail(
                     savedUser.getEmail(),
-                    savedUser.getUsername(),
+                    savedUser.getIdNumber(),
                     plainPassword // Send plain password for email
-                    , savedUser.getRoles().iterator().next() // Send role for email
+                    ,savedUser.getRoles().iterator().next() // Send a role for email
             );
         } catch (Exception e) {
             // Log error but don't fail the request
@@ -98,95 +109,115 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @RequestBody LoginRequest request) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @NotNull @RequestBody LoginRequest request) {
         try {
             Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+                    new UsernamePasswordAuthenticationToken(request.getIdNumber(), request.getPassword()));
+
+            String role = authentication.getAuthorities().stream()
+                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                    .findFirst()
+                    .orElse("UNKNOWN");
 
             String jwt = jwtUtil.generateToken(
-                    request.getUsername(),
-                    authentication.getAuthorities().stream()
-                            .map(auth -> auth.getAuthority().replace("ROLE_", ""))
-                            .collect(Collectors.toSet()));
+                    request.getIdNumber(),
+                    Set.of(role));
 
             Map<String, Object> data = new HashMap<>();
             data.put("token", jwt);
-            data.put("username", request.getUsername());
-            data.put("roles", authentication.getAuthorities().stream()
-                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
-                    .collect(Collectors.toList()));
+            data.put("ID Number", request.getIdNumber());
+            data.put("role", role); // ✅ Plain string now
 
             return ResponseEntity.ok(
                     new ApiResponse<>(1, "Login successful", data));
         } catch (AuthenticationException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-                    new ApiResponse<>(0, "Invalid username or password", null));
+                    new ApiResponse<>(0, "Invalid ID Number or password", null));
         }
     }
 
+
+//    @PostMapping("/login")
+//    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @NotNull @RequestBody LoginRequest request) {
+//        try {
+//            Authentication authentication = authenticationManager.authenticate(
+//                    new UsernamePasswordAuthenticationToken(request.getIdNumber(), request.getPassword()));
+//
+//            String jwt = jwtUtil.generateToken(
+//                    request.getIdNumber(),
+//                    authentication.getAuthorities().stream()
+//                            .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+//                            .collect(Collectors.toSet()));
+//
+//            Map<String, Object> data = new HashMap<>();
+//            data.put("token", jwt);
+//            data.put("ID Number", request.getIdNumber());
+//            data.put("role", authentication.getAuthorities().stream()
+//                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+//                    .collect(Collectors.toList()));
+//
+//            return ResponseEntity.ok(
+//                    new ApiResponse<>(1, "Login successful", data));
+//        } catch (AuthenticationException e) {
+//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
+//                    new ApiResponse<>(0, "Invalid ID Number or password", null));
+//        }
+
     public static class RegisterRequest {
+        @Setter
+        @Getter
+        @NotNull
+        private Long idNumber;
+
+        @Setter
         @Getter
         @NotBlank
-        private String username;
+        private String firstName;
+
+        @Setter
+        @Getter
         @NotBlank
-        private String password;
+        private String lastName;
+
+        @Setter
+        @Getter
+        @NotBlank
+        private String phoneNumber;
+
+        @Email
+        @Setter
+        @Getter
         @NotBlank
         private String email;
+
+        @Setter
+        @Getter
+        @NotBlank
+        private String password;
+
+        @Setter
+        @Getter
         @NotBlank
         private String role;
 
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
-
-        public String getEmail() {
-            return email;
-        }
-
-        public void setEmail(String email) {
-            this.email = email;
-        }
-
-        public String getRole() {
-            return role;
-        }
-
-        public void setRole(String role) {
-            this.role = role;
-        }
     }
 
+
     public static class LoginRequest {
-        @NotBlank
-        private String username;
+
+        @Setter
+        @Getter
+        @NotNull
+        private Long idNumber;
+
+        @Setter
+        @Getter
         @NotBlank
         private String password;
 
-        public String getUsername() {
-            return username;
-        }
-
-        public void setUsername(String username) {
-            this.username = username;
-        }
-
-        public String getPassword() {
-            return password;
-        }
-
-        public void setPassword(String password) {
-            this.password = password;
-        }
     }
 
+    @Getter
     public static class JwtResponse {
         private final String token;
 
@@ -194,8 +225,5 @@ public class AuthController {
             this.token = token;
         }
 
-        public String getToken() {
-            return token;
-        }
     }
 }

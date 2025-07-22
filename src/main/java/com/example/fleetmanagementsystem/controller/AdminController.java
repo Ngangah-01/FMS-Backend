@@ -1,6 +1,7 @@
 package com.example.fleetmanagementsystem.controller;
 
 import com.example.fleetmanagementsystem.DTO.ApiResponse;
+import com.example.fleetmanagementsystem.DTO.UserResponse;
 import com.example.fleetmanagementsystem.model.*;
 import com.example.fleetmanagementsystem.services.*;
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -50,10 +52,13 @@ public class AdminController {
         this.assignmentService = assignmentService;
     }
 
+    @Setter
+    @Getter
     @Data
     public static class UserDTO {
-        @NotBlank(message = "Username is required")
-        private String username;
+
+        @NotNull(message = "ID Number is required")
+        private Long idNumber;
 
         @NotBlank(message = "Password is required")
         private String password;
@@ -62,7 +67,11 @@ public class AdminController {
         @Pattern(regexp = "DRIVER|MARSHALL|CONDUCTOR", message = "Role must be DRIVER, MARSHALL or CONDUCTOR")
         private String role;
 
-        private String name; // For Conductor, Driver, Marshall
+        @NotBlank
+        private String firstname; // For Conductor, Driver, Marshall
+
+        @NotBlank
+        private String lastname;
 
         @Email(message = "Invalid email format")
         private String email; // For Driver, Marshall
@@ -126,12 +135,18 @@ public class AdminController {
     @PostMapping("/users")
     public ResponseEntity<ApiResponse> createUser(@Valid @RequestBody UserDTO userDTO) {
         // convert role to uppercase for consistency
+        System.out.println("Received UserDTO: " + userDTO);
         userDTO.setRole(userDTO.getRole().toUpperCase());
 
-        // Check if the username exists
-        if (userService.findByUsername(userDTO.getUsername()).isPresent()) {
+        if (userDTO.getIdNumber() == null) {
             return ResponseEntity.badRequest().body(
-                    new ApiResponse(0, "Username already exists"));
+                    new ApiResponse(0, "ID number cannot be null")
+            );
+        }
+        // Check if the username exists
+        if (userService.findByidNumber(userDTO.getIdNumber()).isPresent()) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse(0, "ID Number already exists"));
         }
         if (!userDTO.getRole().equals("ADMIN")
                 && (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().isBlank())) {
@@ -163,9 +178,13 @@ public class AdminController {
                 }
                 break;
             case "CONDUCTOR":
-                if (userDTO.getName() == null || userDTO.getName().isBlank()) {
+                if (userDTO.getLastname() == null || userDTO.getLastname().isBlank()) {
                     return ResponseEntity.badRequest().body(
                             new ApiResponse(0, "Name is required for CONDUCTOR role"));
+                }
+                if (userDTO.getFirstname() == null || userDTO.getFirstname().isBlank()) {
+                    return ResponseEntity.badRequest().body(
+                            new ApiResponse(0, "First name is required for CONDUCTOR role"));
                 }
                 if (userDTO.getEmail() == null || userDTO.getEmail().isBlank()) {
                     return ResponseEntity.badRequest().body(
@@ -180,100 +199,119 @@ public class AdminController {
 
         // Create and save user
         Users user = new Users();
-        user.setUsername(userDTO.getUsername());
+        user.setIdNumber(userDTO.getIdNumber());
         String plainPassword = userDTO.getPassword(); // Store plain password for email
         user.setPassword(passwordEncoder.encode(plainPassword));
         Set<String> roles = new HashSet<>();
+        roles.add("ROLE_" + role); // Add "ROLE_" prefix to the role
         roles.add(role);
         user.setRoles(roles);
         user.setEmail(userDTO.getEmail());
-        user.setName(userDTO.getName());
+        user.setFirstname(userDTO.getFirstname());
+        user.setLastname(userDTO.getLastname());
         user.setPhoneNumber(userDTO.getPhoneNumber());
-        Users savedUser = userService.saveUser(user);
+//        Users savedUser = userService.saveUser(user);
 
         // Handle role-specific data
         Map<String, Object> responseData = new HashMap<>();
-        responseData.put("id", savedUser.getId());
-        responseData.put("username", savedUser.getUsername());
-        responseData.put("role", role);
+        responseData.put("Id_Number", user.getIdNumber());
+        responseData.put("Role", role);
         responseData.put("email", userDTO.getEmail());
         responseData.put("PhoneNumber", userDTO.getPhoneNumber());
 
         switch (role) {
             case "CONDUCTOR":
                 Conductor conductor = new Conductor();
-                conductor.setName(userDTO.getName());
+                conductor.setConductorId(userDTO.getIdNumber());
+                conductor.setFirstname(userDTO.getFirstname());
+                conductor.setLastname(userDTO.getLastname());
                 conductor.setEmail(userDTO.getEmail());
                 conductor.setPhoneNumber(userDTO.getPhoneNumber());
-                conductor.setUser(savedUser);
-                conductorService.saveConductor(conductor);
-                responseData.put("name", userDTO.getName());
-
-                try {
-                    emailService.sendAccountCreationEmail(
-                            savedUser.getEmail(),
-                            savedUser.getUsername(),
-                            plainPassword,
-                            role);
-                } catch (Exception e) {
-                    System.err.println("Failed to send account creation email: " + e.getMessage());
-                }
+                conductor.setUser(user);
+                user.setConductor(conductor);
+                responseData.put("Firstname", userDTO.getFirstname());
+                responseData.put("Lastname", userDTO.getLastname());
                 break;
             case "DRIVER":
                 Driver driver = new Driver();
-                driver.setName(userDTO.getName());
+                driver.setDriverId(userDTO.getIdNumber());
+                driver.setFirstname(userDTO.getFirstname());
+                driver.setLastname(userDTO.getLastname());
                 driver.setEmail(userDTO.getEmail());
                 driver.setPhoneNumber(userDTO.getPhoneNumber());
                 driver.setLicenseNumber(userDTO.getLicenseNumber());
-                driver.setUser(savedUser);
-                driverService.saveDriver(driver);
-                responseData.put("name", userDTO.getName());
+                driver.setUser(user);
+                user.setDriver(driver);
+                responseData.put("Firstname", userDTO.getFirstname());
+                responseData.put("Lastname", userDTO.getLastname());
                 responseData.put("licenseNumber", userDTO.getLicenseNumber());
-                try {
-                    emailService.sendAccountCreationEmail(
-                            savedUser.getEmail(),
-                            savedUser.getUsername(),
-                            // savedUser.getRoles().toString(),
-                            plainPassword,
-                            role);
-                } catch (Exception e) {
-                    // Log error but don't fail the request
-                    System.err.println("Failed to send account creation email: " + e.getMessage());
-                }
-
                 break;
             case "MARSHALL":
                 Marshall marshall = new Marshall();
-                marshall.setName(userDTO.getName());
+                marshall.setMarshallId(userDTO.getIdNumber());
+                marshall.setFirstname(userDTO.getFirstname());
+                marshall.setLastname(userDTO.getLastname());
                 marshall.setEmail(userDTO.getEmail());
                 marshall.setPhoneNumber(userDTO.getPhoneNumber());
                 marshall.setStage(userDTO.getStage());
-                marshall.setUser(savedUser);
-                marshallService.saveMarshallProfile(marshall);
-                responseData.put("name", userDTO.getName());
+                marshall.setUser(user);
+                user.setMarshall(marshall); //setting the bidirectional relationship
+//                savedUser.setMarshall(marshall);
+//                marshallService.saveMarshallProfile(marshall);
+                responseData.put("Firstname", userDTO.getFirstname());
+                responseData.put("Lastname", userDTO.getLastname());
                 responseData.put("stage", userDTO.getStage());
-
-                try {
-                    emailService.sendAccountCreationEmail(
-                            savedUser.getEmail(),
-                            savedUser.getUsername(),
-                            // savedUser.getRoles().toString(),
-                            plainPassword,
-                            role);
-                } catch (Exception e) {
-                    // Log error but don't fail the request
-                    System.err.println("Failed to send account creation email: " + e.getMessage());
-                }
                 break;
+        }
+        // Save the user and related entities
+        Users savedUser = userService.saveUser(user);
+
+        try {
+            emailService.sendAccountCreationEmail(
+                    savedUser.getEmail(),
+                    savedUser.getIdNumber(),
+                    // savedUser.getRoles().toString(),
+                    plainPassword,
+                    role);
+        } catch (Exception e) {
+            // Log error but don't fail the request
+            System.err.println("Failed to send account creation email: " + e.getMessage());
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
                 new ApiResponse(1, "User created successfully", responseData));
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/users")
-    public ResponseEntity<List<Users>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<ApiResponse> getAllUsers() {
+        List<Users> users = userService.getAllUsers();
+        if (users.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse(0, "No users found"));
+        }
+        List<UserResponse> userDTOs = users.stream().map(user -> {
+            UserResponse dto = new UserResponse();
+            dto.setIdNumber(user.getIdNumber());
+            dto.setFirstname(user.getFirstname());
+            dto.setLastname(user.getLastname());
+            dto.setEmail(user.getEmail());
+            dto.setPhoneNumber(user.getPhoneNumber());
+            String role = user.getRoles().stream()
+                    .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                    .findFirst()
+                    .orElse(null);
+            dto.setRole(role);
+            dto.setEnabled(user.isEnabled());
+            if (user.getRoles().contains("ROLE_MARSHALL") && user.getMarshall() != null) {
+                dto.setStage(user.getMarshall().getStage());
+            }
+            if (user.getRoles().contains("ROLE_DRIVER") && user.getDriver() != null) {
+                dto.setLicenseNumber(user.getDriver().getLicenseNumber());
+            }
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Users retrieved successfully", userDTOs));
     }
 
     // get all users with role ADMIN
@@ -285,50 +323,105 @@ public class AdminController {
         return ResponseEntity.ok(admins);
     }
 
-    // get all users with role DRIVER or CONDUCTOR. Include ApiResponse format
+    @Transactional(readOnly = true)
     @GetMapping("/users/drivers")
     public ResponseEntity<ApiResponse> getAllDrivers() {
-        List<Driver> drivers = driverService.getAllDrivers().stream()
-                .filter(user -> user.getRoles().contains("DRIVER"))
-                .toList();
+        List<Driver> drivers = driverService.getAllDrivers();
         if (drivers.isEmpty()) {
             return ResponseEntity.status(404).body(
                     new ApiResponse(0, "No drivers found"));
         }
-        return ResponseEntity
-                .ok(new ApiResponse(1, "Drivers retrieved successfully", drivers));
+        List<UserResponse> driverDTOs = drivers.stream().map(driver -> {
+            UserResponse dto = new UserResponse();
+            dto.setIdNumber(driver.getDriverId());
+            dto.setFirstname(driver.getFirstname());
+            dto.setLastname(driver.getLastname());
+            dto.setEmail(driver.getEmail());
+            dto.setPhoneNumber(driver.getPhoneNumber());
+            dto.setLicenseNumber(driver.getLicenseNumber());
+            String role = driver.getUser().getRoles().stream()
+                    .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                    .findFirst()
+                    .orElse("DRIVER");
+            dto.setRole(role);
+            dto.setEnabled(driver.getUser().isEnabled());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Drivers retrieved successfully", driverDTOs));
     }
 
-    // get all users with role MARSHALL include ApiResponse format
+
+    @Transactional(readOnly = true)
     @GetMapping("/users/marshalls")
     public ResponseEntity<ApiResponse> getAllMarshallProfiles() {
-        List<Users> marshalls = userService.getAllUsers().stream()
-                .filter(user -> user.getRoles().contains("MARSHALL"))
-                .toList();
+        List<Marshall> marshalls = marshallService.getAllMarshallProfiles();
         if (marshalls.isEmpty()) {
             return ResponseEntity.status(404).body(
                     new ApiResponse(0, "No marshalls found"));
         }
-        return ResponseEntity.ok(new ApiResponse(1, "Marshalls retrieved successfully", marshalls));
+        List<UserResponse> marshallDTOs = marshalls.stream().map(marshall -> {
+            UserResponse dto = new UserResponse();
+            dto.setIdNumber(marshall.getMarshallId());
+            dto.setFirstname(marshall.getFirstname());
+            dto.setLastname(marshall.getLastname());
+            dto.setEmail(marshall.getEmail());
+            dto.setPhoneNumber(marshall.getPhoneNumber());
+            dto.setStage(marshall.getStage());
+            String role = marshall.getUser().getRoles().stream()
+                    .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                    .findFirst()
+                    .orElse("MARSHALL");
+            dto.setRole(role);
+            dto.setEnabled(marshall.getUser().isEnabled());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Marshalls retrieved successfully", marshallDTOs));
+    }
+
+    @Transactional(readOnly = true)
+    @GetMapping("/users/conductors")
+    public ResponseEntity<ApiResponse> getAllConductors() {
+        List<Conductor> conductors = conductorService.getAllConductors();
+        if (conductors.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse(0, "No conductors found"));
+        }
+        List<UserResponse> conductorDTOs = conductors.stream().map(conductor -> {
+            UserResponse dto = new UserResponse();
+            dto.setIdNumber(conductor.getConductorId());
+            dto.setFirstname(conductor.getFirstname());
+            dto.setLastname(conductor.getLastname());
+            dto.setEmail(conductor.getEmail());
+            dto.setPhoneNumber(conductor.getPhoneNumber());
+            String role = conductor.getUser().getRoles().stream()
+                    .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                    .findFirst()
+                    .orElse("CONDUCTOR");
+            dto.setRole(role);
+            dto.setEnabled(conductor.getUser().isEnabled());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Conductors retrieved successfully", conductorDTOs));
     }
 
     @DeleteMapping("/users/{id}")
-    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Long id) {
-        Optional<Users> userOptional = userService.getUserById(id);
+    public ResponseEntity<ApiResponse> deleteUser(@PathVariable Long idNumber) {
+        Optional<Users> userOptional = userService.getUserById(idNumber);
 
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(404).body(
-                    new ApiResponse(0, "User with id " + id + "not found"));
+                    new ApiResponse(0, "User with id " + idNumber + "not found"));
         }
         Users user = userOptional.get();
         String role = user.getRoles().stream().findFirst().orElse("");
 
         String email = user.getEmail();
-        String username = user.getUsername();
-        userService.deleteUser(id);
+        Long id = user.getIdNumber();
+        // Delete the user
+        userService.deleteUser(idNumber);
 
         try {
-            emailService.sendAccountDeletionEmail(email, username, role);
+            emailService.sendAccountDeletionEmail(email, id, role);
         } catch (Exception e) {
             System.err.println("Failed to send account deletion email: " + e.getMessage());
         }
