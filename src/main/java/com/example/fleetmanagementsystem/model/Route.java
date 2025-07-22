@@ -19,4 +19,17 @@ public class Route {
 
     @Column(nullable = false)
     private String endPoint;
+
+    @ManyToOne
+    @JoinColumn(name = "start_marshall_id")
+    private Marshall startMarshall;
+
+    @ManyToOne
+    @JoinColumn(name="end_marshall_id")
+    private Marshall endMarshall;
+
+
+    //number of vehicles on one route
+
+    //stage marshalls on each point
 }

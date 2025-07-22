@@ -29,15 +29,15 @@ public class DriverVehicleAssignmentService {
     }
 
     @Transactional
-    public ApiResponse assignVehicle(Long driverId, String regNo) {
+    public ApiResponse assignVehicle(Long driverId, String plateNumber) {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new EntityNotFoundException("Driver not found with ID: " + driverId));
 
-        List<Matatu> matatus = matatuRepository.findByRegNo(regNo.toUpperCase());
+        List<Matatu> matatus = matatuRepository.findByPlateNumber(plateNumber.toUpperCase());
         if (matatus.isEmpty()) {
-            return new ApiResponse(0, "Vehicle not found with Reg No: " + regNo);
+            return new ApiResponse(0, "Vehicle not found with Reg No: " + plateNumber);
         }
-        Matatu matatu = matatus.get(0); // Assuming regNo is unique
+        Matatu matatu = matatus.get(0); // Assuming plateNumber is unique
 
         // Check if driver already has a vehicle
         if (assignmentRepository.findByDriverAndUnassignedAtIsNull(driver).isPresent()) {
@@ -46,7 +46,7 @@ public class DriverVehicleAssignmentService {
 
         // Check if vehicle is already assigned
         if (assignmentRepository.findByMatatuAndUnassignedAtIsNull(matatu).isPresent()) {
-            return new ApiResponse(0, "Vehicle with Reg No " + regNo + " is already assigned");
+            return new ApiResponse(0, "Vehicle with Plate Number " + plateNumber + " is already assigned");
         }
 
         DriverVehicleAssignment assignment = new DriverVehicleAssignment();
@@ -79,10 +79,10 @@ public class DriverVehicleAssignmentService {
         return assignmentRepository.save(assignment);
     }
 
-    public List<Matatu> getVehicleByRegNo(String regNo) {
-        if (regNo == null || regNo.isEmpty()) {
-            throw new IllegalArgumentException("Registration number must not be null or empty");
+    public List<Matatu> getVehicleByPlateNumber(String plateNumber) {
+        if (plateNumber == null || plateNumber.isEmpty()) {
+            throw new IllegalArgumentException("Plate number must not be null or empty");
         }
-        return matatuRepository.findByRegNo(regNo.toUpperCase());
+        return matatuRepository.findByPlateNumber(plateNumber.toUpperCase());
     }
 }
