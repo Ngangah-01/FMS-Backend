@@ -36,6 +36,13 @@ public class Marshall {
     @Column(nullable = false)
     private String Stage;
 
+    @ManyToOne
+    private Route route;
+
+    @OneToOne
+    @JoinColumn(name = "user_id", unique = true)
+    private Users user; // Assuming Users is a class that represents the user details
+
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marshall_Id", referencedColumnName = "id_Number", insertable = false, updatable = false, unique = true)
     private Users user; // Assuming Users is a class that represents the user details
@@ -51,6 +58,7 @@ public class Marshall {
                 ", Stage='" + Stage + '\'' +
                 '}';
     }
+
     // Additional fields can be added as needed
 
 }
