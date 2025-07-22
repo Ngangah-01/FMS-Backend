@@ -29,9 +29,9 @@ public class MatatuController {
     //matatu DTO
     @Data
     public static class MatatuDTO {
-        @NotBlank(message = "Registration number is required")
-        @Size(min = 5, max = 10, message = "Registration number must be between 5 and 10 characters")
-        private String regNo;
+        @NotBlank(message = "Plate number is required")
+        @Size(min = 5, max = 10, message = "Plate number must be between 5 and 10 characters")
+        private String plateNumber;
 
         @Min(value = 14, message = "Capacity must be at least 14")
         private int capacity;
@@ -56,12 +56,13 @@ public class MatatuController {
         return ResponseEntity.ok(new ApiResponse<>(1, "Available matatus retrieved successfully", matatus));
     }
 
+    //create matatu
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<ApiResponse<Matatu>> createMatatu(@Valid @RequestBody MatatuDTO matatuDTO) {
         try {
             Matatu newMatatu = new Matatu();
-            newMatatu.setRegNo(matatuDTO.getRegNo().toUpperCase()); // Convert regNo to uppercase
+            newMatatu.setPlateNumber(matatuDTO.getPlateNumber().toUpperCase()); // Convert plateNumber to uppercase
             newMatatu.setCapacity(matatuDTO.getCapacity());
             newMatatu.setModel(matatuDTO.getModel());
             Matatu savedMatatu = matatuService.saveMatatu(newMatatu);
@@ -71,45 +72,46 @@ public class MatatuController {
             );
         } catch (DataIntegrityViolationException e) {
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(0, "Matatu with registration number " + matatuDTO.getRegNo() + " already exists", null)
+                    new ApiResponse<>(0, "Matatu with registration number " + matatuDTO.getPlateNumber() + " already exists", null)
             );
         }
     }
 
+    //get matatu details
     @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
-    @GetMapping("/{id}")
-    public Object getMatatuById(@PathVariable("id") Long id) {
-        if (id == null || id <= 0) {
+    @GetMapping("/{plateNumber}")
+    public Object getMatatuByPlateNumber(@PathVariable("plateNumber") String plateNumber) {
+        if (plateNumber == null) {
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(0, "Invalid Matatu ID", null)
+                    new ApiResponse<>(0, "Invalid Matatu plate number", null)
             );
         }
-        Optional<Matatu> matatu = matatuService.getMatatuById(id);
+        Optional<Matatu> matatu = matatuService.getMatatuByPlateNumber(plateNumber);
         return matatu.map(value -> ResponseEntity.ok(
                         new ApiResponse<>(1, "Matatu retrieved successfully", value)
                 ))
                 .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ApiResponse<>(0, "Matatu not found with ID: " + id, null)
+                        new ApiResponse<>(0, "Matatu not found with plate number: " + plateNumber, null)
                 ));
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping("/{id}")
+    @PutMapping("/{plateNumber}")
     public ResponseEntity<ApiResponse<Matatu>> updateMatatu(
-            @PathVariable("id") Long id,
+            @PathVariable("plateNumber") String plateNumber,
             @Valid @RequestBody MatatuDTO matatuDTO) {
-        if (id == null || id <= 0) {
+        if (plateNumber == null) {
             return ResponseEntity.badRequest().body(
-                    new ApiResponse<>(0, "Invalid Matatu ID", null));
+                    new ApiResponse<>(0, "Invalid Matatu plate number", null));
         }
-        Optional<Matatu> existingMatatu = matatuService.getMatatuById(id);
+        Optional<Matatu> existingMatatu = matatuService.getMatatuByPlateNumber(plateNumber);
         if (existingMatatu.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(0, "Matatu not found with ID: " + id, null)
+                    new ApiResponse<>(0, "Matatu not found with plate number: " + plateNumber, null)
             );
         }
         Matatu matatu = existingMatatu.get();
-        matatu.setRegNo(matatuDTO.getRegNo().toUpperCase());
+        matatu.setPlateNumber(matatuDTO.getPlateNumber().toUpperCase());
         matatu.setCapacity(matatuDTO.getCapacity());
         matatu.setModel(matatuDTO.getModel());
 //        matatu.setAvailable(matatuDTO.getAvailable() != null ? matatuDTO.getAvailable() : matatu.getAvailable());
@@ -120,20 +122,20 @@ public class MatatuController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Object>> deleteMatatu(@PathVariable("id") Long id) {
-        if (id == null || id <= 0) {
+    @DeleteMapping("/{plateNumber}")
+    public ResponseEntity<ApiResponse<Object>> deleteMatatu(@PathVariable("plateNumber") String plateNumber) {
+        if (plateNumber == null) {
             return ResponseEntity.badRequest().body(
                     new ApiResponse<>(0, "Invalid Matatu ID", null)
             );
         }
-        Optional<Matatu> matatu = matatuService.getMatatuById(id);
+        Optional<Matatu> matatu = matatuService.getMatatuByPlateNumber(plateNumber);
         if (matatu.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(0, "Matatu not found with ID: " + id, null)
+                    new ApiResponse<>(0, "Matatu not found with plate number: " + plateNumber, null)
             );
         }
-        matatuService.deleteMatatu(id);
+        matatuService.deleteMatatu(plateNumber);
         return ResponseEntity.ok(
                 new ApiResponse<>(1, "Matatu deleted successfully", null)
         );
