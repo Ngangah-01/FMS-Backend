@@ -80,15 +80,15 @@ public class AdminController {
         @NotNull(message = "Driver ID is required")
         private Long driverId;
 
-        @NotBlank(message = "Vehicle Reg No is required")
-        private String regNo;
+        @NotBlank(message = "Plate No is required")
+        private String plateNumber;
 
-        public String getRegNo() {
-            return regNo.toUpperCase();
+        public String getPlateNumber() {
+            return plateNumber.toUpperCase();
         }
 
-        public void setRegNo(String regNo) {
-            this.regNo = regNo.toUpperCase();
+        public void setPlateNumber(String plateNumber) {
+            this.plateNumber = plateNumber.toUpperCase();
         }
 
         @Setter
@@ -100,10 +100,11 @@ public class AdminController {
         }
     }
 
+
     @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
     @PostMapping("/assign-driver")
     public ResponseEntity<ApiResponse> assignDriverToVehicle(@Valid @RequestBody AssignmentDTO assignmentDTO) {
-        ApiResponse response = assignmentService.assignVehicle(assignmentDTO.getDriverId(), assignmentDTO.getRegNo());
+        ApiResponse response = assignmentService.assignVehicle(assignmentDTO.getDriverId(), assignmentDTO.getPlateNumber());
         return ResponseEntity.status(response.getStatus() == 1 ? HttpStatus.CREATED : HttpStatus.BAD_REQUEST)
                 .body(response);
     }
