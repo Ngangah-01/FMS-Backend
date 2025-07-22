@@ -1,6 +1,5 @@
 package com.example.fleetmanagementsystem.services;
 
-import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -21,7 +20,7 @@ public class EmailService {
         this.mailSender = mailSender;
     }
 
-    public void sendAccountCreationEmail(String toEmail, String username, String password ,String role) throws MessagingException {
+    public void sendAccountCreationEmail(String toEmail, Long idNumber, String password ,String role) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
@@ -35,13 +34,13 @@ public class EmailService {
             <h2>Welcome to Fleet Management System!</h2>
             <p>Your %s account has been successfully created. Below are your login credentials:</p>
             <ul>
-                <li><strong>Username:</strong> %s</li>
+                <li><strong>ID_Number:</strong> %s</li>
                 <li><strong>Password:</strong> %s</li>
             </ul>
             <p>Please log in to the system at <a href="https://your-fleet-system.com/login">here</a> and change your password immediately for security.</p>
             <p>If you did not request this account, please contact the system administrator via +254745115711.Charges Apply😂😂</p>
             <p>Best regards,<br>Fleet Management System Team</p>
-            """.formatted(formattedRole, username, password);
+            """.formatted(formattedRole, idNumber, password);
 
         helper.setText(htmlContent, true);
         mailSender.send(message);
@@ -56,7 +55,7 @@ public class EmailService {
 //        }
 //    }
 
-    public void sendAccountDeletionEmail(String toEmail, String username, String role) throws MessagingException {
+    public void sendAccountDeletionEmail(String toEmail, Long idNumber, String role) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
 
@@ -72,7 +71,7 @@ public class EmailService {
             <p>Your %s account in the Fleet Management System has been deleted by an administrator.</p>
             <p>If you believe this was done in error, please contact the system administrator immediately.</p>
             <p>Best regards,<br>Fleet Management System Team</p>
-            """.formatted(username, formattedRole);
+            """.formatted(idNumber, formattedRole);
 
         helper.setText(htmlContent, true);
         mailSender.send(message);

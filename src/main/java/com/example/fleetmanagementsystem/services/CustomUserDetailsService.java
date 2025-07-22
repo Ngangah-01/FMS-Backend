@@ -19,17 +19,23 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
-        return new org.springframework.security.core.userdetails.User(
-                user.getUsername(),
-                user.getPassword(),
-                user.isEnabled(),
-                true, true, true,
-                user.getRoles().stream()
-                        .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role))
-                        .collect(Collectors.toList())
-        );
+    public UserDetails loadUserByUsername(String idNumberStr) throws UsernameNotFoundException {
+        try {
+            Long idNumber = Long.parseLong(idNumberStr);
+            Users user = userRepository.findByidNumber(idNumber)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + idNumberStr));
+            return new org.springframework.security.core.userdetails.User(
+                    user.getIdNumber().toString(),
+                    user.getPassword(),
+                    user.isEnabled(),
+                    true, true, true,
+                    user.getRoles().stream()
+                            .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role))
+                            .collect(Collectors.toList())
+            );
+        }
+        catch (NumberFormatException e){
+            throw new UsernameNotFoundException("Invalid ID number format: " + idNumberStr);
+        }
     }
 }

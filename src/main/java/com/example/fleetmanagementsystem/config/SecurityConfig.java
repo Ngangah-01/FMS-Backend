@@ -55,7 +55,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for API authentication
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Make authentication stateless
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll() // Allow login access
+                        .requestMatchers("/api/auth/**", "/error").permitAll() // Allow login access
                         .requestMatchers("/api/matatus").hasAnyRole("ADMIN","MARSHALL","DRIVER","CONDUCTOR")
                         .requestMatchers("/api/matatus/**").authenticated() // Require authentication, roles checked by @PreAuthorize
                         .requestMatchers("/api/routes").hasAnyRole("ADMIN","MARSHALL")
