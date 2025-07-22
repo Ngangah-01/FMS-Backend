@@ -39,6 +39,10 @@ public class MatatuController {
         @NotBlank(message = "Model is required")
         @Size(max = 20, message = "Model must not exceed 20 characters")
         private String model;
+
+        private String status;
+
+        private String route;
     }
 
 
@@ -51,8 +55,8 @@ public class MatatuController {
 
     @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
     @GetMapping("/available")
-    public ResponseEntity<ApiResponse<List<Matatu>>> getAvailableMatatus() {
-        List<Matatu> matatus = matatuService.findAvailableMatatus();
+    public ResponseEntity<ApiResponse<List<Matatu>>> findAvailableMatatus() {
+        List<Matatu> matatus = matatuService.findAvailableMatatus("available");
         return ResponseEntity.ok(new ApiResponse<>(1, "Available matatus retrieved successfully", matatus));
     }
 
@@ -65,6 +69,8 @@ public class MatatuController {
             newMatatu.setPlateNumber(matatuDTO.getPlateNumber().toUpperCase()); // Convert plateNumber to uppercase
             newMatatu.setCapacity(matatuDTO.getCapacity());
             newMatatu.setModel(matatuDTO.getModel());
+            newMatatu.setStatus(matatuDTO.getStatus().toLowerCase());
+            newMatatu.setRoute(matatuDTO.getRoute());
             Matatu savedMatatu = matatuService.saveMatatu(newMatatu);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(
@@ -114,6 +120,9 @@ public class MatatuController {
         matatu.setPlateNumber(matatuDTO.getPlateNumber().toUpperCase());
         matatu.setCapacity(matatuDTO.getCapacity());
         matatu.setModel(matatuDTO.getModel());
+        matatu.setStatus(matatuDTO.getStatus());
+        matatu.setRoute(matatuDTO.getRoute());
+
 //        matatu.setAvailable(matatuDTO.getAvailable() != null ? matatuDTO.getAvailable() : matatu.getAvailable());
         Matatu updatedMatatu = matatuService.saveMatatu(matatu);
         return ResponseEntity.ok(
