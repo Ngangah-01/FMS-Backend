@@ -25,9 +25,14 @@ public class Marshall {
     @Column(nullable = false)
     private String Stage;
 
+    @ManyToOne
+    private Route route;
+
     @OneToOne
     @JoinColumn(name = "user_id", unique = true)
     private Users user; // Assuming Users is a class that represents the user details
+
+
 
     // Additional fields can be added as needed
 
