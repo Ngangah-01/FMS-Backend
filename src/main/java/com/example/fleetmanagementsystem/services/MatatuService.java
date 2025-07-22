@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.awt.*;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,14 +26,14 @@ public class MatatuService {
     }
 
     //method to get a matatu by id
-    public Optional<Matatu> getMatatuById(Long id) {
-        return matatuRepository.findById(id);
+    public Optional<Matatu> getMatatuByPlateNumber(String plateNumber) {
+        return matatuRepository.findById(plateNumber);
 //                .orElseThrow(() -> new RuntimeException("Matatu not found with id: " + id));
     }
 
     //method to save a matatu
     public Matatu saveMatatu(Matatu matatu) {
-        if (matatu.getRegNo() == null || matatu.getModel() == null || matatu.getCapacity() == null) {
+        if (matatu.getPlateNumber() == null || matatu.getModel() == null || matatu.getCapacity() == null) {
             throw new IllegalArgumentException("Matatu registration number, model, and capacity must not be null");
         }
         return matatuRepository.save(matatu);
@@ -41,15 +42,15 @@ public class MatatuService {
 
     //method to update a matatu
     @Transactional
-    public Matatu updateMatatu(Long id, Matatu updatedMatatu) {
-        Optional<Matatu> existingMatatu = getMatatuById(id);
+    public Matatu updateMatatu(String plateNumber, Matatu updatedMatatu) {
+        Optional<Matatu> existingMatatu = getMatatuByPlateNumber(plateNumber);
         if (existingMatatu.isEmpty()) {
-            throw new RuntimeException("Matatu not found with id: " + id);
+            throw new RuntimeException("Matatu not found with plateNumber: " + plateNumber);
         }
         Matatu matatu = existingMatatu.get();
         // Update fields if they are not null
-        if (updatedMatatu.getRegNo() != null) {
-            matatu.setRegNo(updatedMatatu.getRegNo());
+        if (updatedMatatu.getPlateNumber() != null) {
+            matatu.setPlateNumber(updatedMatatu.getPlateNumber());
         }
         if (updatedMatatu.getModel() != null) {
             matatu.setModel(updatedMatatu.getModel());
@@ -61,17 +62,22 @@ public class MatatuService {
     }
 
     //method to delete a matatu
-    public void deleteMatatu(Long id) {
-        if (!matatuRepository.existsById(id)) {
-            throw new RuntimeException("Matatu not found with id: " + id);
+    public void deleteMatatu(String plateNumber){
+        if (!matatuRepository.existsById(plateNumber)){
+            throw new RuntimeException("Matatu not found with plateNumber: " + plateNumber);
         }
-        matatuRepository.deleteById(id);
+        matatuRepository.deleteById(plateNumber);
     }
 
     //method to find matatus by registration number
-    public List<Matatu> findMatatusByRegNo(String regNo) {
-        return matatuRepository.findByRegNo(regNo);
+    public List<Matatu> findMatatusByPlateNumber(String plateNumber) {
+        return matatuRepository.findByPlateNumber(plateNumber);
     }
+
+//    //find available matatus
+//    public List<Matatu> findAvailableMatatus() {
+//        return matatuRepository.findByAvailable(true);
+//    }
 
     //find available matatus
     public List<Matatu> findAvailableMatatus() {
