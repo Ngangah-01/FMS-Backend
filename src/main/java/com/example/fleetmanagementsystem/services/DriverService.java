@@ -3,6 +3,7 @@ package com.example.fleetmanagementsystem.services;
 import com.example.fleetmanagementsystem.model.Driver;
 import com.example.fleetmanagementsystem.repositories.DriverRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 import java.util.Optional;
@@ -16,22 +17,26 @@ public class DriverService {
         this.driverRepository = driverRepository;
     }
 
+    @Transactional
     public Driver saveDriver(Driver driver) {
         driverRepository.save(driver);
         return driver;
     }
 
-    public Optional<Driver> getDriverById(Long id) {
-        return driverRepository.findById(id);
+    @Transactional(readOnly = true)
+    public Optional<Driver> getDriverByidNumber(Long driverId) {
+        return driverRepository.findById(driverId);
 
     }
 
+    @Transactional(readOnly = true)
     public List<Driver> getAllDrivers() {
         return driverRepository.findAll();
     }
 
-    public void deleteDriver(Long id) {
-        driverRepository.deleteById(id);
+    @Transactional
+    public void deleteDriver(Long driverId) {
+        driverRepository.deleteById(driverId);
     }
 
 //    public Driver updateDriver(Long id, Driver updatedDriver) {

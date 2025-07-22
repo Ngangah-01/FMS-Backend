@@ -3,6 +3,7 @@ package com.example.fleetmanagementsystem.services;
 import com.example.fleetmanagementsystem.model.Conductor;
 import com.example.fleetmanagementsystem.repositories.ConductorRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,16 +17,14 @@ public class ConductorService {
         this.conductorRepository = conductorRepository;
     }
 
+    @Transactional
     public Conductor saveConductor(Conductor conductor) {
         return conductorRepository.save(conductor);
     }
 
-//    public Optional<Conductor> findByEmail(String email){
-//        return conductorRepository.findByEmail(email);
-//    }
-
-    public Optional<Conductor> getConductorById(Long id) {
-        return conductorRepository.findById(id);
+    @Transactional
+    public Optional<Conductor> getConductorById(Long conductorId) {
+        return conductorRepository.findById(conductorId);
     }
 
 
@@ -34,7 +33,7 @@ public class ConductorService {
         return conductorRepository.findAll();
     }
 
-    public void deleteConductor(Long id) {
-        conductorRepository.deleteById(id);
+    public void deleteConductor(Long conductorId) {
+        conductorRepository.deleteById(conductorId);
     }
 }

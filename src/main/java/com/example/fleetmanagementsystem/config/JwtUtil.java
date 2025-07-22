@@ -38,13 +38,13 @@ public class JwtUtil {
         }
     }
 
-    public String generateToken(String username, Set<String> roles) {
+    public String generateToken(Long idNumber, Set<String> roles) {
         byte[] keyBytes = Base64.getDecoder().decode(secret);
         SecretKey secretKey = new SecretKeySpec(keyBytes, "HmacSHA512");
 
         return Jwts.builder()
-                .setSubject(username)
-                .claim("roles", String.join(",", roles))
+                .setSubject(String.valueOf(idNumber))
+                .claim("role", String.join(",", roles))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expiration))
                 .signWith(secretKey, SignatureAlgorithm.HS512)
@@ -56,7 +56,7 @@ public class JwtUtil {
     }
 
     public Set<String> extractRoles(String token) {
-        String roles = extractClaim(token, claims -> claims.get("roles", String.class));
+        String roles = extractClaim(token, claims -> claims.get("Role", String.class));
         return roles != null ? Arrays.stream(roles.split(","))
                 .filter(role -> !role.isEmpty())
                 .collect(Collectors.toSet()) : Set.of();
