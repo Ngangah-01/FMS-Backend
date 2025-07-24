@@ -39,9 +39,9 @@ public class Marshall {
     @ManyToOne
     private Route route;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", unique = true)
-    private Users user; // Assuming Users is a class that represents the user details
+//    @OneToOne
+//    @JoinColumn(name = "user_id", unique = true)
+//    private Users user; // Assuming Users is a class that represents the user details
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marshall_Id", referencedColumnName = "id_Number", insertable = false, updatable = false, unique = true)
