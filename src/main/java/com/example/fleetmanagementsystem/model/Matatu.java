@@ -23,5 +23,4 @@ public class Matatu {
 
     boolean available = true; // Default value for availability
 
-
 }
