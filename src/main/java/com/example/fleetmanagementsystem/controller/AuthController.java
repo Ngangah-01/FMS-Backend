@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -90,13 +89,13 @@ public class AuthController {
         responseData.put("Lastname", savedUser.getLastname());
         responseData.put("PhoneNumber", savedUser.getPhoneNumber());
         responseData.put("Email", savedUser.getEmail());
-        responseData.put("role", savedUser.getRoles().iterator().next());
+        responseData.put("role", savedUser.getRole().iterator().next());
         try {
             emailService.sendAccountCreationEmail(
                     savedUser.getEmail(),
                     savedUser.getIdNumber(),
                     plainPassword // Send plain password for email
-                    ,savedUser.getRoles().iterator().next() // Send a role for email
+                    ,savedUser.getRole().iterator().next() // Send a role for email
             );
         } catch (Exception e) {
             // Log error but don't fail the request
@@ -135,33 +134,6 @@ public class AuthController {
                     new ApiResponse<>(0, "Invalid ID Number or password", null));
         }
     }
-
-
-//    @PostMapping("/login")
-//    public ResponseEntity<ApiResponse<Map<String, Object>>> login(@Valid @NotNull @RequestBody LoginRequest request) {
-//        try {
-//            Authentication authentication = authenticationManager.authenticate(
-//                    new UsernamePasswordAuthenticationToken(request.getIdNumber(), request.getPassword()));
-//
-//            String jwt = jwtUtil.generateToken(
-//                    request.getIdNumber(),
-//                    authentication.getAuthorities().stream()
-//                            .map(auth -> auth.getAuthority().replace("ROLE_", ""))
-//                            .collect(Collectors.toSet()));
-//
-//            Map<String, Object> data = new HashMap<>();
-//            data.put("token", jwt);
-//            data.put("ID Number", request.getIdNumber());
-//            data.put("role", authentication.getAuthorities().stream()
-//                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
-//                    .collect(Collectors.toList()));
-//
-//            return ResponseEntity.ok(
-//                    new ApiResponse<>(1, "Login successful", data));
-//        } catch (AuthenticationException e) {
-//            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
-//                    new ApiResponse<>(0, "Invalid ID Number or password", null));
-//        }
 
     public static class RegisterRequest {
         @Setter

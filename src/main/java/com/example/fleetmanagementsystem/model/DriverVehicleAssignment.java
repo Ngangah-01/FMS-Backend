@@ -26,11 +26,18 @@ public class DriverVehicleAssignment {
     @Column(name = "assigned_at", nullable = false)
     private LocalDateTime assignedAt;
 
-    @Column(name = "unassigned_at")
-    private LocalDateTime unassignedAt;
+    @Column(name = "assigned_by" , nullable = false)
+    private String assignedBy;
 
     @PrePersist
     protected void onCreate() {
         assignedAt = LocalDateTime.now();
     }
-}
+
+//    public void setAssignedBy(String assignedBy) {
+//        if (driver != null) {
+//            driver.setAssignedBy(assignedBy);
+//        } else {
+//            throw new IllegalStateException("Driver must be set before setting assigned by");
+//        }
+    }

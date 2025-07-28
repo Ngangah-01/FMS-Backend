@@ -46,4 +46,19 @@ public class UserService {
     public void deleteUser(Long idNumber) {
         userRepository.deleteById(idNumber);
     }
+
+    public List<Users> getAllAdmins() {
+        return userRepository.findAllByRoles("ADMIN");
+    }
+
+    // find by user email
+    public Optional<Users> findByEmail(String email){
+        return userRepository.findByEmail(email);
+      }
+
+//    public Optional<Users> findByEmail(String email) {
+//        return userRepository.findAll().stream()
+//                .filter(user -> user.getEmail().equals(email))
+//                .findFirst();
+//    }
 }

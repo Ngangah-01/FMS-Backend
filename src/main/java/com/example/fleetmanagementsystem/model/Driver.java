@@ -6,8 +6,6 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.util.Collection;
-
 @Getter
 @Setter
 @Data
@@ -54,7 +52,7 @@ public class Driver {
 
     public String getRoles(){
         if (user != null) {
-            return user.getRoles().toString();
+            return user.getRole().toString();
         } else {
             throw new IllegalStateException("User must be set to get role");
         }
