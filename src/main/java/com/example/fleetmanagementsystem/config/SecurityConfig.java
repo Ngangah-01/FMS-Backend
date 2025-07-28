@@ -56,8 +56,9 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // Make authentication stateless
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**", "/error").permitAll() // Allow login access
+                        .requestMatchers("/api/user/**").authenticated()
                         .requestMatchers("/api/matatus").hasAnyRole("ADMIN","MARSHALL","DRIVER","CONDUCTOR")
-                        .requestMatchers("/api/matatus/**").authenticated() // Require authentication, roles checked by @PreAuthorize
+                        .requestMatchers("/api/matatus/**").authenticated() // Require authentication, role checked by @PreAuthorize
                         .requestMatchers("/api/routes").hasAnyRole("ADMIN","MARSHALL")
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -80,7 +81,7 @@ public class SecurityConfig {
 //                    .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username)); // already handled by jwtAuthenticationFilter
 //            return User.withUsername(user.getUsername())
 //                    .password(user.getPassword())
-//                    .roles(user.getRoles().toArray(new String[0]))
+//                    .role(user.getRole().toArray(new String[0]))
 //                    .build();
 //        };
 //    }
@@ -95,8 +96,8 @@ public class SecurityConfig {
 //    public JwtAuthenticationConverter jwtAuthenticationConverter() {
 //        JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
 //        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-//            String roles = jwt.getClaimAsString("roles");
-//            return Arrays.stream(roles.split(","))
+//            String role = jwt.getClaimAsString("role");
+//            return Arrays.stream(role.split(","))
 //                    .map(role -> new SimpleGrantedAuthority("ROLE_" + role))
 //                    .collect(Collectors.toList());
 //        });

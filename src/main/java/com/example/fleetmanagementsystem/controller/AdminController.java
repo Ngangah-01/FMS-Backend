@@ -2,6 +2,7 @@ package com.example.fleetmanagementsystem.controller;
 
 import com.example.fleetmanagementsystem.DTO.ApiResponse;
 import com.example.fleetmanagementsystem.DTO.UserResponse;
+import com.example.fleetmanagementsystem.DTO.response.*;
 import com.example.fleetmanagementsystem.model.*;
 import com.example.fleetmanagementsystem.services.*;
 import jakarta.validation.Valid;
@@ -118,13 +119,67 @@ public class AdminController {
                 .body(response);
     }
 
+    // delete assignment
     @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
-    @PostMapping("/unassign-driver")
-    public ResponseEntity<ApiResponse> unassignDriverFromVehicle(
-            @Valid @RequestBody AssignmentDTO.UnassignmentDTO unassignmentDTO) {
-        ApiResponse response = assignmentService.unassignVehicle(unassignmentDTO.getDriverId());
-        return ResponseEntity.status(response.getStatus() == 1 ? HttpStatus.OK : HttpStatus.NOT_FOUND)
+    @DeleteMapping("/delete-assignment/{driverId}")
+    public ResponseEntity<ApiResponse<Void>> deleteAssignment(@PathVariable Long driverId) {
+        ApiResponse<Void> response = assignmentService.deleteAssignment(driverId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
+    @PutMapping("/update-assignment")
+    public ResponseEntity<ApiResponse> updateDriverAssignment(@Valid @RequestBody AssignmentDTO assignmentDTO) {
+        ApiResponse response = assignmentService.updateAssignment(assignmentDTO.getDriverId(), assignmentDTO.getPlateNumber());
+        return ResponseEntity.status(response.getStatus() == 1 ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
                 .body(response);
+    }
+
+    // viewing assignments
+    @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
+    @GetMapping("/assignments")
+    public ResponseEntity<ApiResponse> getAllAssignments() {
+        List<DriverVehicleAssignment> assignments = assignmentService.getAllAssignments();
+        if (assignments.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new ApiResponse(0, "No assignments found"));
+        }
+        List<Map<String, Object>> responseData = assignments.stream().map(assignment -> {
+            Map<String, Object> data = new HashMap<>();
+            data.put("driverId", assignment.getDriver().getDriverId());
+            data.put("matatuPlate", assignment.getMatatu().getPlateNumber());
+            data.put("assignedAt", assignment.getAssignedAt());
+            data.put("assignedBy", assignment.getAssignedBy());
+            return data;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Assignments retrieved successfully", responseData));
+    }
+
+    // getting the list of unassigned drivers: who have no active vehicle assignment
+    @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
+    @GetMapping("/unassigned-drivers")
+    public ResponseEntity<ApiResponse> getUnassignedDrivers() {
+        List<Driver> unassignedDrivers = assignmentService.getUnassignedDrivers();
+        if (unassignedDrivers.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new ApiResponse(0, "No unassigned drivers found"));
+        }
+        List<UserResponse> driverDTOs = unassignedDrivers.stream().map(driver -> {
+            UserResponse dto = new UserResponse();
+            dto.setIdNumber(driver.getDriverId());
+            dto.setFirstname(driver.getFirstname());
+            dto.setLastname(driver.getLastname());
+            dto.setEmail(driver.getEmail());
+            dto.setPhoneNumber(driver.getPhoneNumber());
+            dto.setLicenseNumber(driver.getLicenseNumber());
+            String role = driver.getUser().getRole().stream()
+                    .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                    .findFirst()
+                    .orElse("DRIVER");
+            dto.setEnabled(driver.getUser().isEnabled());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Unassigned drivers retrieved successfully", driverDTOs));
     }
 
     /**
@@ -152,7 +207,7 @@ public class AdminController {
         if (!userDTO.getRole().equals("ADMIN")
                 && (userDTO.getPhoneNumber() == null || userDTO.getPhoneNumber().isBlank())) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse(0, "Phone number is required for non-admin roles"));
+                    .body(new ApiResponse(0, "Phone number is required for non-admin role"));
         }
 
         // Validate role-specific fields
@@ -271,7 +326,7 @@ public class AdminController {
             emailService.sendAccountCreationEmail(
                     savedUser.getEmail(),
                     savedUser.getIdNumber(),
-                    // savedUser.getRoles().toString(),
+                    // savedUser.getRole().toString(),
                     plainPassword,
                     role);
         } catch (Exception e) {
@@ -298,16 +353,16 @@ public class AdminController {
             dto.setLastname(user.getLastname());
             dto.setEmail(user.getEmail());
             dto.setPhoneNumber(user.getPhoneNumber());
-            String role = user.getRoles().stream()
+            String role = user.getRole().stream()
                     .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
                     .findFirst()
                     .orElse(null);
             dto.setRole(role);
             dto.setEnabled(user.isEnabled());
-            if (user.getRoles().contains("ROLE_MARSHALL") && user.getMarshall() != null) {
+            if (user.getRole().contains("ROLE_MARSHALL") && user.getMarshall() != null) {
                 dto.setStage(user.getMarshall().getStage());
             }
-            if (user.getRoles().contains("ROLE_DRIVER") && user.getDriver() != null) {
+            if (user.getRole().contains("ROLE_DRIVER") && user.getDriver() != null) {
                 dto.setLicenseNumber(user.getDriver().getLicenseNumber());
             }
             return dto;
@@ -315,14 +370,149 @@ public class AdminController {
         return ResponseEntity.ok(new ApiResponse(1, "Users retrieved successfully", userDTOs));
     }
 
-    // get all users with role ADMIN
-    @GetMapping("/users/admins")
-    public ResponseEntity<List<Users>> getAllAdmins() {
-        List<Users> admins = userService.getAllUsers().stream()
-                .filter(user -> user.getRoles().contains("ADMIN"))
-                .toList();
-        return ResponseEntity.ok(admins);
+    //get user by IDnumber
+    @Transactional(readOnly = true)
+    @GetMapping("/users/{idNumber}")
+    public ResponseEntity<ApiResponse> getUserById(@PathVariable Long idNumber) {
+        Optional<Users> userOptional = userService.getUserById(idNumber);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse(0, "User with ID " + idNumber + " not found"));
+        }
+        Users user = userOptional.get();
+        UserResponse dto = new UserResponse();
+        dto.setIdNumber(user.getIdNumber());
+        dto.setFirstname(user.getFirstname());
+        dto.setLastname(user.getLastname());
+        dto.setEmail(user.getEmail());
+        dto.setPhoneNumber(user.getPhoneNumber());
+        String role = user.getRole().stream()
+                .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                .findFirst()
+                .orElse(null);
+        dto.setRole(role);
+        dto.setEnabled(user.isEnabled());
+        if (user.getRole().contains("ROLE_MARSHALL") && user.getMarshall() != null) {
+            dto.setStage(user.getMarshall().getStage());
+        }
+        if (user.getRole().contains("ROLE_DRIVER") && user.getDriver() != null) {
+            dto.setLicenseNumber(user.getDriver().getLicenseNumber());
+        }
+        return ResponseEntity.ok(new ApiResponse(1, "User retrieved successfully", dto));
     }
+
+    //updating any user details
+    @Transactional
+    @PutMapping("/users/{idNumber}")
+    public ResponseEntity<ApiResponse> updateUser(@PathVariable Long idNumber, @Valid @RequestBody UserDTO userDTO) {
+        Optional<Users> userOptional = userService.getUserById(idNumber);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse(0, "User with ID " + idNumber + " not found"));
+        }
+        Users user = userOptional.get();
+
+        user.setFirstname(userDTO.getFirstname());
+        user.setLastname(userDTO.getLastname());
+        user.setEmail(userDTO.getEmail());
+        user.setPhoneNumber(userDTO.getPhoneNumber());
+
+        String role = userDTO.getRole().toUpperCase();
+
+        if (role.equals("DRIVER")) {
+            if (userDTO.getLicenseNumber() == null || userDTO.getLicenseNumber().isBlank()) {
+                return ResponseEntity.badRequest().body(
+                        new ApiResponse(0, "License number is required for DRIVER role"));
+            }
+            Driver driver = user.getDriver();
+            if (driver == null) {
+                driver = new Driver();
+                driver.setDriverId(idNumber);
+                driver.setUser(user);
+                user.setDriver(driver);
+            }
+
+            driver.setDriverId(userDTO.getIdNumber());
+            driver.setFirstname(userDTO.getFirstname());
+            driver.setLastname(userDTO.getLastname());
+            driver.setEmail(userDTO.getEmail());
+            driver.setPhoneNumber(userDTO.getPhoneNumber());
+            driver.setLicenseNumber(userDTO.getLicenseNumber());
+
+            DriverResponseDTO responseDTO = DriverResponseDTO.from(driver);
+            return ResponseEntity.ok(new ApiResponse(1, "Driver updated successfully", responseDTO));
+        } else if (role.equals("MARSHALL")) {
+            Marshall marshall = user.getMarshall();
+            if (marshall == null) {
+                marshall = new Marshall();
+                marshall.setMarshallId(idNumber);
+                marshall.setUser(user);
+                user.setMarshall(marshall);
+            }
+
+            marshall.setMarshallId(userDTO.getIdNumber());
+            marshall.setStage(userDTO.getStage());
+            marshall.setFirstname(userDTO.getFirstname());
+            marshall.setLastname(userDTO.getLastname());
+            marshall.setEmail(userDTO.getEmail());
+            marshall.setPhoneNumber(userDTO.getPhoneNumber());
+
+
+            MarshallResponseDTO responseDTO = MarshallResponseDTO.from(user.getMarshall());
+
+            return ResponseEntity.ok(new ApiResponse(1, "Marshall updated successfully", responseDTO));
+        } else if (role.equals("CONDUCTOR")) {
+            Conductor conductor = user.getConductor();
+            if (conductor == null) {
+                conductor = new Conductor();
+                conductor.setConductorId(idNumber);
+                conductor.setUser(user);
+                user.setConductor(conductor);
+            }
+
+            conductor.setConductorId(userDTO.getIdNumber());
+            conductor.setFirstname(userDTO.getFirstname());
+            conductor.setLastname(userDTO.getLastname());
+            conductor.setEmail(userDTO.getEmail());
+            conductor.setPhoneNumber(userDTO.getPhoneNumber());
+
+            ConductorResponseDTO responseDTO = ConductorResponseDTO.from(user.getConductor());
+
+            return ResponseEntity.ok(new ApiResponse(1, "Conductor updated successfully", responseDTO));
+        } else {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse(0, "Invalid role for update"));
+        }
+    }
+
+   //getting all users who are admins
+    @Transactional(readOnly = true)
+    @GetMapping("/users/admins")
+    public ResponseEntity<ApiResponse> getAllAdmins() {
+        List<Users> admins = userService.getAllAdmins();
+        if (admins.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse(0, "No admins found"));
+        }
+        List<UserResponse> adminDTOs = admins.stream().map(admin -> {
+            UserResponse dto = new UserResponse();
+            dto.setIdNumber(admin.getIdNumber());
+            dto.setFirstname(admin.getFirstname());
+            dto.setLastname(admin.getLastname());
+            dto.setEmail(admin.getEmail());
+            dto.setPhoneNumber(admin.getPhoneNumber());
+            String role = admin.getRole().stream()
+                    .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
+                    .findFirst()
+                    .orElse("ADMIN");
+            dto.setRole(role);
+            dto.setEnabled(admin.isEnabled());
+            return dto;
+        }).collect(Collectors.toList());
+        return ResponseEntity.ok(new ApiResponse(1, "Admins retrieved successfully", adminDTOs));
+    }
+
+
 
     @Transactional(readOnly = true)
     @GetMapping("/users/drivers")
@@ -340,7 +530,7 @@ public class AdminController {
             dto.setEmail(driver.getEmail());
             dto.setPhoneNumber(driver.getPhoneNumber());
             dto.setLicenseNumber(driver.getLicenseNumber());
-            String role = driver.getUser().getRoles().stream()
+            String role = driver.getUser().getRole().stream()
                     .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
                     .findFirst()
                     .orElse("DRIVER");
@@ -368,7 +558,7 @@ public class AdminController {
             dto.setEmail(marshall.getEmail());
             dto.setPhoneNumber(marshall.getPhoneNumber());
             dto.setStage(marshall.getStage());
-            String role = marshall.getUser().getRoles().stream()
+            String role = marshall.getUser().getRole().stream()
                     .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
                     .findFirst()
                     .orElse("MARSHALL");
@@ -394,7 +584,7 @@ public class AdminController {
             dto.setLastname(conductor.getLastname());
             dto.setEmail(conductor.getEmail());
             dto.setPhoneNumber(conductor.getPhoneNumber());
-            String role = conductor.getUser().getRoles().stream()
+            String role = conductor.getUser().getRole().stream()
                     .map(r -> r.startsWith("ROLE_") ? r.substring(5) : r)
                     .findFirst()
                     .orElse("CONDUCTOR");
@@ -414,7 +604,7 @@ public class AdminController {
                     new ApiResponse(0, "User with id " + idNumber + "not found"));
         }
         Users user = userOptional.get();
-        String role = user.getRoles().stream().findFirst().orElse("");
+        String role = user.getRole().stream().findFirst().orElse("");
 
         String email = user.getEmail();
         Long id = user.getIdNumber();
@@ -430,6 +620,31 @@ public class AdminController {
         return ResponseEntity.ok(
                 new ApiResponse(1, "User with id " + id + " deleted successfully"));
     }
+
+    //change user password for any user who is logged in
+    @Transactional
+    @PutMapping("/users/{idNumber}/change-password")
+    public ResponseEntity<ApiResponse> changeUserPassword(@PathVariable Long idNumber,
+                                                           @Valid @RequestBody UserDTO userDTO) {
+        Optional<Users> userOptional = userService.getUserById(idNumber);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(404).body(
+                    new ApiResponse(0, "User with ID " + idNumber + " not found"));
+        }
+        Users user = userOptional.get();
+        String newPassword = userDTO.getPassword();
+        if (newPassword == null || newPassword.isBlank()) {
+            return ResponseEntity.badRequest().body(
+                    new ApiResponse(0, "New password cannot be empty"));
+        }
+        user.setPassword(passwordEncoder.encode(newPassword));
+        Users updatedUser = userService.saveUser(user);
+
+        return ResponseEntity.ok(new ApiResponse(1, "Password changed successfully", updatedUser));
+    }
+
+
+
 
     /*
      * Trip Assignment

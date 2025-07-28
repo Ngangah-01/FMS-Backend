@@ -1,5 +1,6 @@
 package com.example.fleetmanagementsystem.services;
 
+import jakarta.validation.constraints.Email;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -46,15 +47,6 @@ public class EmailService {
         mailSender.send(message);
     }
 
-//    public void sendAccountCreationEmail(@Email(message = "Invalid email format") String email, String username, String plainPassword) {
-//
-//        try {
-//            sendAccountCreationEmail(email, username, plainPassword, "user");
-//        } catch (MessagingException e) {
-//            throw new RuntimeException("Failed to send account creation email", e);
-//        }
-//    }
-
     public void sendAccountDeletionEmail(String toEmail, Long idNumber, String role) throws MessagingException {
         MimeMessage message = mailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
@@ -78,4 +70,34 @@ public class EmailService {
     }
 
 
+    public void sendPasswordChangeEmail(@Email(message = "Invalid email format") String email, Long idNumber, String password) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+            helper.setFrom(fromEmail);
+            helper.setTo(email);
+            helper.setSubject("Your Fleet Management System Password Has Been Changed");
+
+//            String formattedRole = role.substring(0, 1).toUpperCase() + role.substring(1).toLowerCase();
+
+            String htmlContent = """
+                <h2>Password Change Notification</h2>
+                <p>Dear %s,</p>
+                <p>Your account with ID Number <strong>%s</strong> has had its password changed.</p>
+                <p>Here are your new login credentials:</p>
+                <ul>
+                    <li><strong>ID Number:</strong> %s</li>
+                    <li><strong>Password:</strong> %s</li>
+                <p>Your password in the Fleet Management System has been successfully changed.</p>
+                <p>If you did not initiate this change, please contact the system administrator immediately.</p>
+                <p>Best regards,<br>Fleet Management System Team</p>
+                """.formatted(idNumber, password);
+
+            helper.setText(htmlContent, true);
+            mailSender.send(message);
+        } catch (MessagingException e) {
+            throw new RuntimeException("Failed to send password change email", e);
+        }
+    }
 }
