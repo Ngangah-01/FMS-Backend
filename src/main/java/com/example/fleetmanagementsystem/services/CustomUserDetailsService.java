@@ -2,11 +2,13 @@ package com.example.fleetmanagementsystem.services;
 
 import com.example.fleetmanagementsystem.model.Users;
 import com.example.fleetmanagementsystem.repositories.UserRepository;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -29,7 +31,8 @@ public class CustomUserDetailsService implements UserDetailsService {
                     user.getPassword(),
                     user.isEnabled(),
                     true, true, true,
-                    user.getRoles().stream()
+
+                    user.getRole().stream()
                             .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role))
                             .collect(Collectors.toList())
             );

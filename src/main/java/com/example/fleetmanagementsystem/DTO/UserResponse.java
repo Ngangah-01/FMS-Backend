@@ -14,7 +14,7 @@ public class UserResponse {
     private String email;
     private String phoneNumber;
     private String role;
-//    private Set<String> roles;
+//    private Set<String> role;
     private boolean enabled;
     private String stage; // For MARSHALL
     private String licenseNumber; // For DRIVER

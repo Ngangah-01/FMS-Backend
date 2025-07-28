@@ -1,5 +1,6 @@
 package com.example.fleetmanagementsystem.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -45,6 +46,7 @@ public class Marshall {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "marshall_Id", referencedColumnName = "id_Number", insertable = false, updatable = false, unique = true)
+    @JsonBackReference
     private Users user; // Assuming Users is a class that represents the user details
 
     @Override
