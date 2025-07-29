@@ -39,12 +39,19 @@ public class CheckInOutLogService {
             throw new RuntimeException("Matatu not assigned to any route");
         }
 
+        if (matatu.getStatus().equals("in-maintenance")){
+            throw new RuntimeException("Matatu is under maintenance");
+        }
+
         String stage = matatu.getCurrentStage();
         if (stage==null){
             stage = route.getStartPoint();
             matatu.setCurrentStage(stage);
             matatuRepository.save(matatu);
         }
+
+        matatu.setTrip(1+ matatu.getTrip());
+        matatu.setStatus("Boarding");
 
         //check if no checkout
         checkInOutLogRepository.findByMatatuPlateNumberAndStageNameAndCheckOutTimeIsNull(plateNumber, stage)
@@ -58,9 +65,10 @@ public class CheckInOutLogService {
         log.setStageName(stage);
         log.setCheckInTime(LocalDateTime.now());
 
-
         int previousTrip = checkInOutLogRepository.countByMatatuPlateNumberAndCheckOutTimeIsNotNull(plateNumber);
         log.setTrip(previousTrip+1);
+
+
 
         return checkInOutLogRepository.save(log);
     }
@@ -74,6 +82,10 @@ public class CheckInOutLogService {
         Route route = matatu.getRoute();
         if (route==null){
             throw new RuntimeException("Matatu not assigned to any route");
+        }
+
+        if (matatu.getStatus().equals("in-maintenance")){
+            throw new RuntimeException("Matatu is under maintenance");
         }
 
         String stage = matatu.getCurrentStage();
@@ -90,8 +102,8 @@ public class CheckInOutLogService {
         }else {
             matatu.setCurrentStage(route.getStartPoint());
         }
+        matatu.setStatus("enroute");
         matatuRepository.save(matatu);
-
 
         return checkInOutLogRepository.save(log);
     }
