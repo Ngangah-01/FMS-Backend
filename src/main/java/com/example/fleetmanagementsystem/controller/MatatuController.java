@@ -56,7 +56,6 @@ public class MatatuController {
         private String route;
     }
 
-
     @PreAuthorize("hasAnyRole('MARSHALL', 'ADMIN')")
     @GetMapping
     public ResponseEntity<ApiResponse<List<Matatu>>> getAllMatatus() {
@@ -117,6 +116,7 @@ public class MatatuController {
             );
         }
         Optional<Matatu> matatu = matatuService.getMatatuByPlateNumber(plateNumber);
+
         return matatu.map(value -> ResponseEntity.ok(
                         new ApiResponse<>(1, "Matatu retrieved successfully", value)
                 ))
@@ -125,6 +125,7 @@ public class MatatuController {
                 ));
     }
 
+    //update matatu
     @PreAuthorize("hasRole('ADMIN')")
     @PutMapping("/{plateNumber}")
     public ResponseEntity<ApiResponse<Matatu>> updateMatatu(
@@ -140,21 +141,29 @@ public class MatatuController {
                     new ApiResponse<>(0, "Matatu not found with plate number: " + plateNumber, null)
             );
         }
+
+        Optional<Route> route = routeRepository.findByName(matatuDTO.getRoute());
+        if (route.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
+                    new ApiResponse<>(0, "Matatu route " + matatuDTO.getRoute() + " does not exist")
+            );
+        }
+
         Matatu matatu = existingMatatu.get();
         matatu.setPlateNumber(matatuDTO.getPlateNumber().toUpperCase());
         matatu.setCapacity(matatuDTO.getCapacity());
         matatu.setModel(matatuDTO.getModel());
         matatu.setStatus(matatuDTO.getStatus());
+        matatu.setRoute(route.get());
 
-        //matatu.setRouteName(matatuDTO.getRouteName());
-
-//        matatu.setAvailable(matatuDTO.getAvailable() != null ? matatuDTO.getAvailable() : matatu.getAvailable());
-        Matatu updatedMatatu = matatuService.saveMatatu(matatu);
+        Matatu updatedMatatu = matatuService.updateMatatu(matatu);
         return ResponseEntity.ok(
                 new ApiResponse<>(1, "Matatu updated successfully", updatedMatatu)
         );
     }
 
+
+    //delete matatu
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{plateNumber}")
     public ResponseEntity<ApiResponse<Object>> deleteMatatu(@PathVariable("plateNumber") String plateNumber) {
@@ -207,7 +216,7 @@ public class MatatuController {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(0, "Error: " + e.getMessage(), null)
+                    new ApiResponse<>(0, e.getMessage(), null)
             );
         }
     }
@@ -234,7 +243,7 @@ public class MatatuController {
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(0, "Error: " + e.getMessage(), null)
+                    new ApiResponse<>(0, e.getMessage(), null)
             );
         }
     }
