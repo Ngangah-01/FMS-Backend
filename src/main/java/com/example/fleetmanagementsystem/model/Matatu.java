@@ -27,6 +27,9 @@ public class Matatu {
     @Column
     private String currentStage;
 
+    @Column
+    private int trip;
+
 
 //    public String getRouteName() {
 //        return this.route != null ? this.route.getName() : null;
