@@ -19,8 +19,21 @@ public class Matatu {
 
     private String status; //available, assigned, enroute, breakdown, delay
 
-    private String route;
 
-//    boolean available = true; // Default value for availability
+    @ManyToOne
+    @JoinColumn(name="route")
+    private Route route;
+
+    @Column
+    private String currentStage;
+
+    @Column
+    private int trip;
+
+
+//    public String getRouteName() {
+//        return this.route != null ? this.route.getName() : null;
+//    }
+
 
 }

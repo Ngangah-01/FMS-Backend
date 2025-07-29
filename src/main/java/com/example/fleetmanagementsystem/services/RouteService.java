@@ -2,8 +2,10 @@ package com.example.fleetmanagementsystem.services;
 
 import com.example.fleetmanagementsystem.DTO.ApiResponse;
 import com.example.fleetmanagementsystem.model.Marshall;
+import com.example.fleetmanagementsystem.model.Matatu;
 import com.example.fleetmanagementsystem.model.Route;
 import com.example.fleetmanagementsystem.repositories.MarshallRepository;
+import com.example.fleetmanagementsystem.repositories.MatatuRepository;
 import com.example.fleetmanagementsystem.repositories.RouteRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -19,13 +21,20 @@ public class RouteService {
     private final RouteRepository routeRepository;
     private final MarshallService marshallService;
     private final MarshallRepository marshallRepository;
+    private final MatatuService matatuService;
+    private final MatatuRepository matatuRepository;
+
 
     public RouteService(RouteRepository routeRepository,
                         MarshallService marshallService,
-                        MarshallRepository marshallRepository) {
+                        MarshallRepository marshallRepository,
+                        MatatuService matatuService,
+                        MatatuRepository matatuRepository) {
         this.routeRepository = routeRepository;
         this.marshallService = marshallService;
         this.marshallRepository = marshallRepository;
+        this.matatuService=matatuService;
+        this.matatuRepository=matatuRepository;
     }
 
     public List<Route> getAllRoutes() {
@@ -38,6 +47,10 @@ public class RouteService {
 
     public Optional<Route> getRouteById(Long routeId) {
         return routeRepository.findById(routeId);
+    }
+
+    public Optional<Route> getRouteByName(String name){
+        return routeRepository.findByName(name);
     }
 
 
@@ -153,5 +166,63 @@ public class RouteService {
 //        return routeRepository.save(route);
 
     }
+
+    public List<Matatu> getMatatusInRoute(Long routeId){
+        return matatuRepository.findByRoute_routeId(routeId);
+    }
+
+//    //assign matatu to route
+//    public Route assignMatatuToRoute(Long routeId, String plateNumber){
+//        Route route = routeRepository.findById(routeId)
+//                .orElseThrow(() -> new EntityNotFoundException("Route not found with id " + routeId));
+//
+//        Matatu matatu = matatuRepository.findById(plateNumber)
+//                .orElseThrow(() -> new EntityNotFoundException("Matatu not found with plate number " + plateNumber));
+//
+////        //check if matatu is already assigned to another route
+////        if(!isMatatuAssigned(routeId, plateNumber)){
+////            throw new IllegalArgumentException("Matatu " + plateNumber + " is already assigned to this route");
+////        }
+//
+//        return routeRepository.save(route);
+//    }
+//
+//    //is matatu assigned to route
+//    public boolean isMatatuAssigned(Long routeId, String plateNumber){
+//        Optional<Route> routeOptional = routeRepository.findById(routeId);
+//        if(routeOptional.isEmpty()){
+//            return false; //route not found
+//        }
+//
+//        Route route = routeOptional.get();
+//        Matatu matatu = route.getMatatu();
+//
+//        return matatu!=null;
+//    }
+//
+//    //unassign matatu from route
+//    public Route unassignMatatuFromRoute(String plateNumber){
+//        Matatu matatu = matatuRepository.findById(plateNumber)
+//                .orElseThrow(() -> new EntityNotFoundException("Matatu not found with plateNumber " + plateNumber));
+//
+//        Optional<Route> routeOptional = routeRepository.findByMatatu_PlateNumber(plateNumber);
+//        if(routeOptional.isEmpty()){
+//            throw new EntityNotFoundException("Matatu " + plateNumber + " is not assigned to any route");
+//        }
+//
+//        Route route = routeOptional.get();
+//
+//        boolean unassigned = false;
+//        if (route.getMatatu() != null && route.getMatatu().getPlateNumber().equals(plateNumber)){
+//            route.setMatatu(null);
+//            unassigned = true;
+//        }
+//
+//        if (!unassigned) {
+//            throw new IllegalArgumentException("Matatu " + plateNumber + " is not assigned to this route");
+//        }
+//
+//        return routeRepository.save(route);
+//    }
 
 }

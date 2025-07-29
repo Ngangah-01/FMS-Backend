@@ -8,7 +8,9 @@ import java.util.List;
 public interface MatatuRepository extends JpaRepository<Matatu, String> {
     List<Matatu> findByPlateNumber(String plateNumber);
 
-//    List<Matatu> findByAvailable(boolean b);
+    //List<Matatu> findByAvailable(boolean b);
 
     List<Matatu> findByStatus(String status);
+
+    List<Matatu> findByRoute_routeId(Long routeId);
 }

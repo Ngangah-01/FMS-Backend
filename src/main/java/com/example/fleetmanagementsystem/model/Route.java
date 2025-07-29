@@ -2,6 +2,9 @@ package com.example.fleetmanagementsystem.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Data
 @Entity
 @Table(name = "routes")
@@ -29,7 +32,13 @@ public class Route {
     private Marshall endMarshall;
 
 
+//    @OneToOne
+//    @JoinColumn(name="matatu_id")
+//    private Matatu matatu;
+
+//    @OneToMany(mappedBy = "route")
+//    private List<Matatu> matatus = new ArrayList<>();
+
     //number of vehicles on one route
 
-    //stage marshalls on each point
 }

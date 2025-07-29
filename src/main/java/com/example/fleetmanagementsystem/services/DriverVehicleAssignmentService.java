@@ -75,7 +75,7 @@ public class DriverVehicleAssignmentService {
                 matatu.getCapacity(),
                 matatu.getModel(),
                 matatu.getStatus(),
-                matatu.getRoute()
+                matatu.getRoute().getName()
         );
 
         AssignmentResponse responseDTO = new AssignmentResponse(driverInfo, vehicleInfo, assignment.getAssignedAt(), assignment.getAssignedBy());

@@ -1,11 +1,10 @@
 package com.example.fleetmanagementsystem.controller;
 
-import com.example.fleetmanagementsystem.DTO.ApiResponse;
-import com.example.fleetmanagementsystem.DTO.RouteAssignmentDTO;
-import com.example.fleetmanagementsystem.DTO.RouteUnassignmentDTO;
+import com.example.fleetmanagementsystem.DTO.*;
 import com.example.fleetmanagementsystem.model.Matatu;
 import com.example.fleetmanagementsystem.model.Route;
 import com.example.fleetmanagementsystem.repositories.MarshallRepository;
+import com.example.fleetmanagementsystem.repositories.MatatuRepository;
 import com.example.fleetmanagementsystem.services.RouteService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -23,6 +22,9 @@ import java.util.List;
 public class RouteController {
     @Autowired
     private MarshallRepository marshallRepository;
+
+    @Autowired
+    private MatatuRepository matatuRepository;
 
     private final RouteService routeService;
 
@@ -70,8 +72,6 @@ public class RouteController {
          return ResponseEntity.status(HttpStatus.CREATED)
                  .body(new ApiResponse<>(1, "Route created successfully", savedRoute));
     }
-
-
 
     @PreAuthorize("hasAnyRole('ADMIN','MARSHALL')")
     @PutMapping("/{id}")
@@ -121,7 +121,7 @@ public class RouteController {
                     .body(new ApiResponse<>(0, "Invalid position. Allowed values are 'start' or 'end'.", null));
         }
 
-        //Check if marshall is already assigned to the route
+        //Check if marshall is already assigned to a route
         if (routeService.isMarshallAssignedToRoute(routeAssignmentDTO.getRouteId(), routeAssignmentDTO.getMarshallId())){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponse<>(0, "Marshall with ID "+ routeAssignmentDTO.getMarshallId() + " is already assigned to route with ID " + routeAssignmentDTO.getRouteId()) );
@@ -161,5 +161,61 @@ public class RouteController {
         return ResponseEntity.ok(new ApiResponse<>(1, "Marshall "+ routeUnassignmentDTO.getMarshallId() + " successfully unassigned", null));
 
     }
+
+    @PreAuthorize("hasAnyRole('ADMIN', 'MARSHALL')")
+    @GetMapping("{id}/matatus")
+    public ResponseEntity<ApiResponse<List<Matatu>>> getMatatusInRoute(@PathVariable Long id){
+        List<Matatu> matatus = routeService.getMatatusInRoute(id);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                new ApiResponse<>(1, "Matatus in route id "+ id, matatus));
+    }
+
+//    @PreAuthorize("hasAnyRole('ADMIN', 'MARSHALL')")
+//    @PostMapping("/assign-matatu-to-route")
+//    public ResponseEntity<ApiResponse<Route>> assignMatatuToRoute(@RequestBody MatatuRouteAssignmentDTO matatuRouteAssignmentDTO){
+//        if(routeService.getRouteById(matatuRouteAssignmentDTO.getRouteId()).isEmpty()){
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(new ApiResponse<>(0, "Route not found with ID: " + matatuRouteAssignmentDTO.getRouteId(), null));
+//        }
+//
+//        if(matatuRepository.findById(matatuRouteAssignmentDTO.getPlateNumber()).isEmpty()){
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(new ApiResponse<>(0, "Matatu not found with plate number: " + matatuRouteAssignmentDTO.getPlateNumber(), null));
+//        }
+//
+//        //Check if matatu is already assigned to a route
+//        if (routeService.isMatatuAssigned(matatuRouteAssignmentDTO.getRouteId(), matatuRouteAssignmentDTO.getPlateNumber())){
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+//                    .body(new ApiResponse<>(0, "Matatu with plate number "+ matatuRouteAssignmentDTO.getPlateNumber() + " is already assigned to route with ID " + matatuRouteAssignmentDTO.getRouteId()) );
+//        }
+//
+//        Route savedRoute = routeService.assignMatatuToRoute(
+//                matatuRouteAssignmentDTO.getRouteId(),
+//                matatuRouteAssignmentDTO.getPlateNumber()
+//        );
+//
+//        return ResponseEntity.status(HttpStatus.CREATED)
+//                .body(new ApiResponse<>(1,
+//                        "Route with ID " + matatuRouteAssignmentDTO.getRouteId() + " assigned successfully to Marshall ID " + matatuRouteAssignmentDTO.getPlateNumber(),
+//                        savedRoute));
+//
+//    }
+//
+//    @PreAuthorize("hasAnyRole('ADMIN')")
+//    @PostMapping("/unassign-matatu-from-route")
+//    public ResponseEntity<ApiResponse<Object>> unassignMatatuFromRoute(@RequestBody MatatuRouteUnassignmentDTO matatuRouteUnassignmentDTO){
+//
+//        if(matatuRepository.findById(matatuRouteUnassignmentDTO.getPlateNumber()).isEmpty()){
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+//                    .body(new ApiResponse<>(0, "Matatu not found with plate number: " + matatuRouteUnassignmentDTO.getPlateNumber(), null));
+//        }
+//
+//
+//        Route savedRoute = routeService.unassignMatatuFromRoute(
+//                matatuRouteUnassignmentDTO.getPlateNumber());
+//
+//        return ResponseEntity.ok(new ApiResponse<>(1, "Matatu "+ matatuRouteUnassignmentDTO.getPlateNumber() + " successfully unassigned", null));
+//
+//    }
 
 }
