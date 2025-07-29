@@ -21,6 +21,6 @@ public class Matatu {
 
     private String route;
 
-    boolean available = true; // Default value for availability
+//    boolean available = true; // Default value for availability
 
 }
