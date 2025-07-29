@@ -11,4 +11,6 @@ public interface MatatuRepository extends JpaRepository<Matatu, String> {
     //List<Matatu> findByAvailable(boolean b);
 
     List<Matatu> findByStatus(String status);
+
+    List<Matatu> findByRoute_routeId(Long routeId);
 }
