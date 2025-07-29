@@ -162,6 +162,14 @@ public class RouteController {
 
     }
 
+    @PreAuthorize("hasAnyRole('ADMIN', 'MARSHALL')")
+    @GetMapping("{id}/matatus")
+    public ResponseEntity<ApiResponse<List<Matatu>>> getMatatusInRoute(@PathVariable Long id){
+        List<Matatu> matatus = routeService.getMatatusInRoute(id);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                new ApiResponse<>(1, "Matatus in route id "+ id, matatus));
+    }
+
 //    @PreAuthorize("hasAnyRole('ADMIN', 'MARSHALL')")
 //    @PostMapping("/assign-matatu-to-route")
 //    public ResponseEntity<ApiResponse<Route>> assignMatatuToRoute(@RequestBody MatatuRouteAssignmentDTO matatuRouteAssignmentDTO){
