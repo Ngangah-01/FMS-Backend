@@ -73,8 +73,6 @@ public class RouteController {
                  .body(new ApiResponse<>(1, "Route created successfully", savedRoute));
     }
 
-
-
     @PreAuthorize("hasAnyRole('ADMIN','MARSHALL')")
     @PutMapping("/{id}")
     public ResponseEntity<ApiResponse<Route>> updateRoute(@PathVariable String id,
