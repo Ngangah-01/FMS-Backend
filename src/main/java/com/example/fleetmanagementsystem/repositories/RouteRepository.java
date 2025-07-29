@@ -14,5 +14,8 @@ public interface RouteRepository extends JpaRepository<Route, Long> {
 
     Optional<Route> findByStartMarshall_MarshallIdOrEndMarshall_MarshallId(Long startMarshallId, Long endMarshallId);
 
+    //Optional<Route> findByMatatu_PlateNumber(String plateNumber);
+
+    Optional<Route> findByName(String name);
 
 }
