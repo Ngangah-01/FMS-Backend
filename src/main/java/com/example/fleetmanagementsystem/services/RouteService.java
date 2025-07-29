@@ -167,6 +167,10 @@ public class RouteService {
 
     }
 
+    public List<Matatu> getMatatusInRoute(Long routeId){
+        return matatuRepository.findByRoute_routeId(routeId);
+    }
+
 //    //assign matatu to route
 //    public Route assignMatatuToRoute(Long routeId, String plateNumber){
 //        Route route = routeRepository.findById(routeId)
