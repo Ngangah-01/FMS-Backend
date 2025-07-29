@@ -37,7 +37,6 @@ public class MatatuService {
     }
 
     //method to save a matatu
-    // src/main/java/com/example/fleetmanagementsystem/services/MatatuService.java
     @Transactional
     public Matatu saveMatatu(Matatu matatu) {
 
@@ -71,32 +70,25 @@ public class MatatuService {
 
     //method to update a matatu
     @Transactional
-    public Matatu updateMatatu(String plateNumber, Matatu updatedMatatu) {
-        Optional<Matatu> existingMatatu = getMatatuByPlateNumber(plateNumber);
-        if (existingMatatu.isEmpty()) {
-            throw new RuntimeException("Matatu not found with plateNumber: " + plateNumber);
+    public Matatu updateMatatu(Matatu matatu) {
+        if (matatu.getRoute() == null || matatu.getRoute().getRouteId() == null) {
+            throw new IllegalArgumentException("Route must not be null and must have a valid ID");
         }
-
-//        Optional<Route> route = routeRepository.findByName(updatedMatatu.getRouteName());
-//        if(route.isEmpty()){
-//            throw new IllegalArgumentException("Matatu route does not exist");
-//        }
-
-        Matatu matatu = existingMatatu.get();
-        // Update fields if they are not null
-        if (updatedMatatu.getPlateNumber() != null) {
-            matatu.setPlateNumber(updatedMatatu.getPlateNumber());
+        if (!routeRepository.existsById(matatu.getRoute().getRouteId())) {
+            throw new IllegalArgumentException("Route with ID " + matatu.getRoute().getRouteId() + " does not exist");
         }
-        if (updatedMatatu.getModel() != null) {
-            matatu.setModel(updatedMatatu.getModel());
+        if (matatu.getPlateNumber() == null || matatu.getPlateNumber().isBlank()) {
+            throw new IllegalArgumentException("Plate number must not be null or empty");
         }
-        if (updatedMatatu.getCapacity() != null) {
-            matatu.setCapacity(updatedMatatu.getCapacity());
+        if (matatu.getModel() == null || matatu.getModel().isBlank()) {
+            throw new IllegalArgumentException("Model must not be null or empty");
         }
-//        if (updatedMatatu.getRouteName()!= null){
-//            matatu.setRoute(route.get());
-//        }
-
+        if (matatu.getCapacity() == null || matatu.getCapacity() <= 0) {
+            throw new IllegalArgumentException("Capacity must be a positive number");
+        }
+        if (matatuRepository.findById(matatu.getPlateNumber()).isEmpty()) {
+            throw new IllegalArgumentException("Matatu with plate number '" + matatu.getPlateNumber() + "' does not exist");
+        }
         return matatuRepository.save(matatu);
     }
 
@@ -135,5 +127,5 @@ public class MatatuService {
         return matatuRepository.count();
     }
 
-    //
+
 }
