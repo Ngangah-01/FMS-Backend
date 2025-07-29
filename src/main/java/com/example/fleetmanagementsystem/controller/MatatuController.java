@@ -88,6 +88,7 @@ public class MatatuController {
             newMatatu.setModel(matatuDTO.getModel());
             newMatatu.setStatus(matatuDTO.getStatus().toLowerCase());
             newMatatu.setRoute(route.get());
+            newMatatu.setTrip(0);
 
             Matatu savedMatatu = matatuService.saveMatatu(newMatatu);
 
