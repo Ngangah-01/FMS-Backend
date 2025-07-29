@@ -36,8 +36,8 @@ public class Route {
 //    @JoinColumn(name="matatu_id")
 //    private Matatu matatu;
 
-    @OneToMany(mappedBy = "route")
-    private List<Matatu> matatus = new ArrayList<>();
+//    @OneToMany(mappedBy = "route")
+//    private List<Matatu> matatus = new ArrayList<>();
 
     //number of vehicles on one route
 
