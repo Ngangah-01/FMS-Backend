@@ -135,6 +135,11 @@ public class AuthController {
         }
     }
 
+
+
+
+
+
     public static class RegisterRequest {
         @Setter
         @Getter

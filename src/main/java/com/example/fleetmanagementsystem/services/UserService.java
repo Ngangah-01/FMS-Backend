@@ -56,6 +56,10 @@ public class UserService {
         return userRepository.findByEmail(email);
       }
 
+    public Optional<Users> findByIdNumber(Long idNumber) {
+        return userRepository.findByidNumber(idNumber);
+    }
+
 //    public Optional<Users> findByEmail(String email) {
 //        return userRepository.findAll().stream()
 //                .filter(user -> user.getEmail().equals(email))
